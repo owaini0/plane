@@ -1,8 +1,22 @@
+import random
+import string
+
 class SeatBookingSystem:
     def __init__(self):
-        # Initialize the seating with 6 rows (A-F) and 80 seats in each row (1-80)
         self.seating = {row: ['A'] * 80 for row in 'ABCDEF'}
+        self.booked_seats = {}  # Store seat details including booking reference
+        self.references = set()  # Keep track of all issued booking references
         self.running = True  # Control the running of the menu
+
+    def generate_unique_reference(self):
+        """Generate a unique alphanumeric booking reference of exactly eight characters.
+        The function ensures that each reference is unique by comparing against a set of previously generated references.
+        """
+        while True:
+            reference = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            if reference not in self.references:
+                self.references.add(reference)
+                return reference
 
     def display_menu(self):
         # Display the menu options to the user
@@ -40,32 +54,35 @@ class SeatBookingSystem:
             print(f"Seat {seat} is not available or does not exist.")
 
     def book_seat(self):
-        # Book a seat if it is available
         seat = input("Enter the seat number to book (e.g., B5): ").upper()
-        row, number = seat[0], seat[1:]  # Correctly parse the row and number
-        try:
-            number = int(number) - 1
-            if row in self.seating and self.seating[row][number] == 'A':
-                self.seating[row][number] = 'R'
-                print(f"Seat {seat} has been successfully booked.")
-            else:
-                print(f"Seat {seat} cannot be booked or does not exist.")
-        except ValueError:
-            print("Invalid seat number. Please enter a valid seat such as B5.")
+        row, number = seat[0], int(seat[1:]) - 1
+        if self.seating[row][number] == 'A':
+            reference = self.generate_unique_reference()
+            self.seating[row][number] = reference
+            first_name = input("Enter first name: ")
+            last_name = input("Enter last name: ")
+            passport_number = input("Enter passport number: ")
+            # Store booking details
+            self.booked_seats[reference] = {
+                'passport_number': passport_number,
+                'first_name': first_name,
+                'last_name': last_name,
+                'seat': f"{row}{number + 1}"
+            }
+            print(f"Seat {seat} has been successfully booked with reference {reference}.")
+        else:
+            print(f"Seat {seat} cannot be booked.")
 
     def free_seat(self):
-        # Free a booked seat
         seat = input("Enter the seat number to free (e.g., B5): ").upper()
-        row, number = seat[0], seat[1:]  # Correctly parse the row and number
-        try:
-            number = int(number) - 1
-            if row in self.seating and self.seating[row][number] == 'R':
-                self.seating[row][number] = 'A'
-                print(f"Seat {seat} has been successfully freed.")
-            else:
-                print(f"Seat {seat} is not currently booked or does not exist.")
-        except ValueError:
-            print("Invalid seat number. Please enter a valid seat such as B5.")
+        row, number = seat[0], int(seat[1:]) - 1
+        reference = self.seating[row][number]
+        if isinstance(reference, str) and len(reference) == 8:
+            self.seating[row][number] = 'F'
+            del self.booked_seats[reference]
+            print(f"Seat {seat} has been successfully freed.")
+        else:
+            print(f"Seat {seat} is not currently booked or does not exist.")
 
     def show_booking_state(self):
         # ANSI color codes for terminal output
